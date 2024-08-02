@@ -1,3 +1,7 @@
+#ifndef CHARACTER_H
+#define CHARACTER_H
+
+#include "Error.h"
 #include <GL/gl.h>
 #include <freetype/freetype.h>
 #include <freetype/ftoutln.h>
@@ -13,4 +17,7 @@ typedef struct {
   int advance[2];
 } Character;
 
-Character character_init(FT_Face face, int key, int index);
+LatoErrorCode character_init(Character *character, FT_Face face, int key,
+                             int index);
+
+#endif

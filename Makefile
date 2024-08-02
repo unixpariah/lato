@@ -1,28 +1,29 @@
 CC = gcc
 CFLAGS ?= -std=c11 -Wall -Wextra -Werror -Wno-unused-parameter -g
 
-# Use pkg-config to get the necessary compile and link flags
-CFLAGS += $(shell pkg-config --cflags freetype2 fontconfig)
-LDFLAGS = $(shell pkg-config --libs freetype2 fontconfig)
+LIBS = freetype2 fontconfig gl
+CFLAGS += $(shell pkg-config --cflags $(LIBS))
+LDFLAGS = $(shell pkg-config --libs $(LIBS))
 
-LIB_NAME = liblato
-OBJ_FILES = src/Lato.o src/math.o src/Character.o
+LIB_NAME = lato
+SRC_FILES = src/Lato.c src/math.c src/Character.c
+OBJ_FILES = $(SRC_FILES:.c=.o)
+INCLUDE_DIR = include
 
-INCLUDE_FILES = include/Lato.h include/math.h include/Character.h
-C_FILES = src/Lato.c src/math.c src/Character.c
+.PHONY: all clean test
 
-.PHONY: all clean
+all: lib$(LIB_NAME).a
 
-all: $(LIB_NAME).a
+lib$(LIB_NAME).a: $(OBJ_FILES)
+	@ar rcs $@ $^
+	@ranlib $@
 
-$(LIB_NAME).a: $(OBJ_FILES)
-	ar rcs $@ $^
+%.o: src/%.c
+	@$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -c $< -o $@
 
-src/lato.o: src/lato.c $(INCLUDE_FILES)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-src/math.o: src/math.c $(INCLUDE_FILES)
-	$(CC) $(CFLAGS) -c $< -o $@
+test: all
+	@$(CC) tests/main.c -L. -l$(LIB_NAME) -o ./tests/test $(LDFLAGS)
+	tests/test
 
 clean:
-	rm -f $(LIB_NAME).a $(OBJ_FILES)
+	@rm -f lib$(LIB_NAME).a $(OBJ_FILES) ./tests/test

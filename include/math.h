@@ -1,3 +1,6 @@
+#ifndef MATH_H
+#define MATH_H
+
 typedef float Mat4[4][4];
 
 void mat4(Mat4 *m0);
@@ -10,3 +13,5 @@ void translate(Mat4 *m0, float x, float y, float z);
 void scale(Mat4 *m0, float x, float y, float z);
 
 void mul(Mat4 *m0, Mat4 *m1);
+
+#endif
