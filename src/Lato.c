@@ -1,8 +1,11 @@
 #include "../include/Lato.h"
+#include "GL/gl.h"
 
 LatoErrorCode get_font_path(char **buffer, const char *font_name);
 
 LatoErrorCode lato_init(Lato *lato) {
+  glEnable(GL_BLEND);
+
   FT_Library ft;
   if (FT_Init_FreeType(&ft) == 1) {
     return LATO_ERR_FT_INIT;
@@ -109,5 +112,5 @@ LatoErrorCode get_font_path(char **buffer, const char *font_name) {
   FcConfigDestroy(config);
   FcFini();
 
-  return LATO_ERR;
+  return LATO_OK;
 }
