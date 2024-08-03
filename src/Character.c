@@ -1,4 +1,5 @@
 #include "../include/Character.h"
+#include <stdio.h>
 
 LatoErrorCode character_init(Character *character, FT_Face face, int key,
                              int index) {
@@ -20,7 +21,6 @@ LatoErrorCode character_init(Character *character, FT_Face face, int key,
   glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
   character->texture_id = index;
-  character->key = key;
   character->size[0] = face->glyph->bitmap.width;
   character->size[1] = face->glyph->bitmap.rows;
   character->bearing[0] = face->glyph->bitmap_left;

@@ -36,5 +36,5 @@ test_so: lib$(LIB_NAME).so
 
 clean:
 	@rm -f lib$(LIB_NAME).a lib$(LIB_NAME).so
-	@rm -f $(OBJ_DIR)/*.o
+	@rm -rf $(OBJ_DIR)
 	@rm -f test

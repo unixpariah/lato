@@ -4,6 +4,7 @@
 #define LENGTH 400
 
 #include "Character.h"
+#include "Context.h"
 #include "Error.h"
 #include "GL/glext.h"
 #include "math.h"
@@ -17,19 +18,15 @@
 #include <string.h>
 
 typedef struct {
+  LatoContext context;
   float letter_map[LENGTH];
   Mat4 transform[LENGTH];
-  float start_color[LENGTH][4];
-  float end_color[LENGTH][4];
-  float deg[LENGTH];
   int index;
-  Character char_info[128];
+  Character *char_info;
 } Lato;
 
-LatoErrorCode lato_init(Lato *lato);
+LatoErrorCode lato_init(Lato *lato, LatoContext context);
 
-void lato_text_place();
-
-void lato_text_render();
+LatoErrorCode get_font_path(char **buffer, const char *font_name);
 
 #endif

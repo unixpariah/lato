@@ -11,7 +11,6 @@
 
 typedef struct {
   int texture_id;
-  int key;
   int size[2];
   int bearing[2];
   int advance[2];

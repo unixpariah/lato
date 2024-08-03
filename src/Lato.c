@@ -1,9 +1,8 @@
 #include "../include/Lato.h"
-#include "GL/gl.h"
+#include <stdio.h>
+#include <stdlib.h>
 
-LatoErrorCode get_font_path(char **buffer, const char *font_name);
-
-LatoErrorCode lato_init(Lato *lato) {
+LatoErrorCode lato_init(Lato *lato, LatoContext context) {
   glEnable(GL_BLEND);
 
   FT_Library ft;
@@ -12,7 +11,7 @@ LatoErrorCode lato_init(Lato *lato) {
   }
 
   char *font_path;
-  LatoErrorCode res = get_font_path(&font_path, "JetBrains Mono");
+  LatoErrorCode res = get_font_path(&font_path, context.font.family);
   if (res != LATO_OK)
     return res;
 
@@ -29,15 +28,56 @@ LatoErrorCode lato_init(Lato *lato) {
   glGenTextures(1, &texture_array);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D_ARRAY, texture_array);
-  glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_R8, 256, 256, 128, 0, GL_RED,
-               GL_UNSIGNED_BYTE, NULL);
 
-  for (int i = 0; i < 128; i++) {
-    LatoErrorCode res = character_init(&lato->char_info[i], face, i, i);
-    if (res != LATO_OK)
-      return res;
+  int size = 0;
+  switch (context.char_data.type) {
+  case CHAR_DATA_CHARACTERS: {
+    size = context.char_data.data.length;
+    int arr_size = 0;
+
+    for (int i = 0; i < size; i++) {
+      if (context.char_data.data.characters[i] > arr_size) {
+        arr_size = context.char_data.data.characters[i];
+      }
+    }
+
+    lato->char_info = (Character *)malloc(arr_size + 1 * sizeof(Character));
+
+    break;
+  }
+  case CHAR_DATA_ENCODING: {
+    switch (context.char_data.data.encoding) {
+    case LATO_ENCODING_ASCII: {
+      size = 128;
+      lato->char_info = (Character *)malloc(128 * sizeof(Character));
+      break;
+    }
+    }
+  }
   }
 
+  glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_R8, 256, 256, size, 0, GL_RED,
+               GL_UNSIGNED_BYTE, NULL);
+
+  for (int i = 0; i < size; i++) {
+    Character character;
+
+    LatoErrorCode res;
+    int key;
+    if (context.char_data.type == CHAR_DATA_CHARACTERS) {
+      key = context.char_data.data.characters[i];
+      res = character_init(&character, face,
+                           context.char_data.data.characters[i], i);
+    } else {
+      key = i;
+      res = character_init(&character, face, i, i);
+    }
+
+    if (res != LATO_OK)
+      return res;
+
+    lato->char_info[key] = character;
+  }
   free(font_path);
   FT_Done_Face(face);
   FT_Done_FreeType(ft);
@@ -49,11 +89,12 @@ LatoErrorCode lato_init(Lato *lato) {
     mat4(&lato->transform[i]);
   }
 
+  lato->context = context;
+
   return LATO_OK;
 }
 
 LatoErrorCode get_font_path(char **buffer, const char *font_name) {
-  // Initialize FontConfig
   if (FcInit() != FcTrue) {
     return LATO_ERR_FC_INIT;
   }
