@@ -4,9 +4,6 @@
 #include <string.h>
 
 int test_font_path(const char *font_name) {
-  FT_Library ft;
-  FT_Init_FreeType(&ft);
-
   char *font_path;
   if (get_font_path(&font_path, font_name) != LATO_OK) {
     return 0;
@@ -17,7 +14,6 @@ int test_font_path(const char *font_name) {
       (stat(font_path, &statbuf)) == 0 && S_ISREG(statbuf.st_mode);
 
   free(font_path);
-  FT_Done_FreeType(ft);
 
   return file_exists;
 }
@@ -56,14 +52,16 @@ void test_lato_init() {
 }
 
 int main() {
+  assert(test_font_path("Arial"));
+  assert(test_font_path("Monospace"));
+
   glfwInit();
   GLFWwindow *window = glfwCreateWindow(800, 600, "GLFW Window", NULL, NULL);
   glfwMakeContextCurrent(window);
 
   test_lato_init();
 
-  assert(test_font_path("Arial"));
-  assert(test_font_path("Monospace"));
-
+  glfwDestroyWindow(window);
+  glfwTerminate();
   return 0;
 }

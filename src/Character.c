@@ -1,5 +1,4 @@
 #include "../include/Character.h"
-#include "GL/gl.h"
 
 LatoErrorCode character_init(Character *character, FT_Face face,
                              unsigned int key, GLuint index) {

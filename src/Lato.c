@@ -1,12 +1,15 @@
 #include "../include/Lato.h"
+#include "GL/gl.h"
+#include "GLES3/gl3.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 LatoErrorCode lato_init(Lato *lato, LatoContext *lato_context) {
   glEnable(GL_BLEND);
 
   // TODO: Implement all the shaders
-  // lato->shaders[0] = create_shader_program(solid_vert, solid_frag);
+  lato->shaders[0] = create_shader_program(solid_vert, solid_frag);
   lato->shaders[1] = create_shader_program(gradient_vert, gradient_frag);
   // lato->shaders[2] =
   //     create_shader_program(triple_gradient_vert, triple_gradient_frag);
@@ -22,11 +25,15 @@ LatoErrorCode lato_init(Lato *lato, LatoContext *lato_context) {
     return res;
 
   FT_Face face;
-  if (FT_New_Face(ft, font_path, 0, &face) == 1)
+  if (FT_New_Face(ft, font_path, 0, &face) == 1) {
+    free(font_path);
     return LATO_ERR_FT_FACE;
+  }
 
-  if (FT_Set_Pixel_Sizes(face, 256, 256) == 1)
+  if (FT_Set_Pixel_Sizes(face, 256, 256) == 1) {
+    free(font_path);
     return LATO_ERR_FT_PIXEL_SIZE;
+  }
 
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
@@ -46,7 +53,14 @@ LatoErrorCode lato_init(Lato *lato, LatoContext *lato_context) {
       }
     }
 
-    lato->char_info = (Character *)malloc(arr_size + 1 * sizeof(Character));
+    lato->char_info = (Character *)calloc(arr_size + 1, sizeof(Character));
+    if (lato->char_info == NULL) {
+      free(font_path);
+      glDeleteTextures(1, &lato->texture_array);
+      FT_Done_Face(face);
+      FT_Done_FreeType(ft);
+      return LATO_ERR_OUT_OF_MEMORY;
+    }
 
     break;
   }
@@ -55,6 +69,13 @@ LatoErrorCode lato_init(Lato *lato, LatoContext *lato_context) {
     case LATO_ENCODING_ASCII: {
       size = 128;
       lato->char_info = (Character *)malloc(128 * sizeof(Character));
+      if (lato->char_info == NULL) {
+        free(font_path);
+        glDeleteTextures(1, &lato->texture_array);
+        FT_Done_Face(face);
+        FT_Done_FreeType(ft);
+        return LATO_ERR_OUT_OF_MEMORY;
+      }
       break;
     }
     }
@@ -73,19 +94,19 @@ LatoErrorCode lato_init(Lato *lato, LatoContext *lato_context) {
       key = lato_context->char_data.data.characters[i];
       res = character_init(&character, face,
                            lato_context->char_data.data.characters[i], i);
+
     } else {
       key = i;
       res = character_init(&character, face, i, i);
     }
 
-    if (res != LATO_OK)
-      return res;
-
     lato->char_info[key] = character;
+
+    if (res != LATO_OK) {
+      free(font_path);
+      return res;
+    }
   }
-  free(font_path);
-  FT_Done_Face(face);
-  FT_Done_FreeType(ft);
 
   lato->index = 0;
 
@@ -93,6 +114,10 @@ LatoErrorCode lato_init(Lato *lato, LatoContext *lato_context) {
     lato->letter_map[i] = 0;
     mat4(&lato->transform[i]);
   }
+
+  free(font_path);
+  FT_Done_Face(face);
+  FT_Done_FreeType(ft);
 
   return LATO_OK;
 }
@@ -128,7 +153,7 @@ LatoErrorCode get_font_path(char **buffer, const char *font_name) {
       size_t length = strlen((const char *)font_path) + 1;
       *buffer = malloc(length);
 
-      if (*buffer == NULL) {
+      if (buffer == NULL) {
         FcPatternDestroy(match);
         FcPatternDestroy(pattern);
         FcConfigDestroy(config);
@@ -148,30 +173,12 @@ LatoErrorCode get_font_path(char **buffer, const char *font_name) {
     }
   }
 
-  if (*buffer != NULL) {
-    free(*buffer);
-  }
   FcPatternDestroy(match);
   FcPatternDestroy(pattern);
   FcConfigDestroy(config);
   FcFini();
 
-  return LATO_OK;
-}
-
-void lato_destroy(Lato *lato, LatoContext *lato_context) {
-  glDeleteTextures(1, &lato->texture_array);
-  if (lato_context->char_data.type == CHAR_DATA_CHARACTERS) {
-    for (int i = 0; i < lato_context->char_data.data.length; i++) {
-      character_destroy(
-          &lato->char_info[lato_context->char_data.data.characters[i]]);
-    }
-  } else {
-    for (int i = 0; i < lato_context->char_data.data.length; i++) {
-      character_destroy(&lato->char_info[i]);
-    }
-  }
-  free(lato->char_info);
+  return LATO_ERR_FC_FONT_MATCH;
 }
 
 void lato_text_place(Lato *lato, LatoContext *lato_context, char *text, float x,
@@ -216,4 +223,22 @@ void lato_text_place(Lato *lato, LatoContext *lato_context, char *text, float x,
 void lato_text_render_call(Lato *lato, LatoContext *lato_context) {
   // TODO: Finish the render call
   lato->index = 0;
+}
+
+void lato_destroy(Lato *lato, LatoContext *lato_context) {
+  glDeleteTextures(1, &lato->texture_array);
+  if (lato_context->char_data.type == CHAR_DATA_CHARACTERS) {
+    for (int i = 0; i < lato_context->char_data.data.length; i++) {
+      character_destroy(
+          &lato->char_info[lato_context->char_data.data.characters[i]]);
+    }
+  } else {
+    for (int i = 0; i < lato_context->char_data.data.length; i++) {
+      character_destroy(&lato->char_info[i]);
+    }
+  }
+  free(lato->char_info);
+  for (int i = 0; i < 3; i++) {
+    glDeleteProgram(lato->shaders[i]);
+  }
 }

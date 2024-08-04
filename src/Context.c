@@ -26,7 +26,6 @@ void lato_context_set_characters(LatoContext *lato_context, int characters[]) {
 
   lato_context->char_data.type = CHAR_DATA_CHARACTERS;
   lato_context->char_data.data.length = length;
-  free(lato_context->char_data.data.characters);
   lato_context->char_data.data.characters = characters;
 }
 

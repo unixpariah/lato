@@ -72,6 +72,8 @@ const char *solid_frag =
     "layout(location = 0) out vec4 FragColor;\n"
     "\n"
     "uniform vec4 color[400];\n"
+    "uniform sampler2DArray text;\n"
+    "uniform int letterMap[400];\n"
     "\n"
     "in VS_OUT {\n"
     "  vec2 pos;\n"
@@ -82,7 +84,7 @@ const char *solid_frag =
     "\n"
     "void main() {\n"
     "  FragColor =\n"
-    "      color[fs_in.index] * texture(text, vec3(fs_in.texCoords.xy,\n"
+    "      color[fs_in.index] * texture(text, vec3(fs_in.texCoords,\n"
     "      letterMap[fs_in.index])).r;\n"
     "}\n";
 
@@ -143,7 +145,7 @@ const char *gradient_frag =
     "      gradientFactor);\n"
     "\n"
     "  FragColor =\n"
-    "      color * texture(text, vec3(fs_in.texCoords.xy,\n"
+    "      color * texture(text, vec3(fs_in.texCoords,\n"
     "      letterMap[fs_in.index])).r;\n"
     "}\n";
 
