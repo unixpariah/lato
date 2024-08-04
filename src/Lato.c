@@ -5,6 +5,12 @@
 LatoErrorCode lato_init(Lato *lato, LatoContext *lato_context) {
   glEnable(GL_BLEND);
 
+  // TODO: Implement all the shaders
+  // lato->shaders[0] = create_shader_program(solid_vert, solid_frag);
+  lato->shaders[1] = create_shader_program(gradient_vert, gradient_frag);
+  // lato->shaders[2] =
+  //     create_shader_program(triple_gradient_vert, triple_gradient_frag);
+
   FT_Library ft;
   if (FT_Init_FreeType(&ft) == 1) {
     return LATO_ERR_FT_INIT;
@@ -166,4 +172,48 @@ void lato_destroy(Lato *lato, LatoContext *lato_context) {
     }
   }
   free(lato->char_info);
+}
+
+void lato_text_place(Lato *lato, LatoContext *lato_context, char *text, float x,
+                     float y) {
+  GLuint active_texture;
+  glGetIntegerv(GL_ACTIVE_TEXTURE, (GLint *)&active_texture);
+
+  if (active_texture != lato->texture_array) {
+    glBindTexture(GL_TEXTURE_2D_ARRAY, lato->texture_array);
+  }
+
+  float scale_a = lato_context->font.size / 256.0;
+  float move = 0;
+
+  int index = 0;
+  while (text[index] != '\0') {
+    Character character = lato->char_info[(int)text[index]];
+
+    float x_pos = x + character.bearing[0] * scale_a + move;
+    float y_pos = y - character.bearing[1] * scale_a;
+
+    scale(&lato->transform[lato->index], lato_context->font.size,
+          lato_context->font.size, 0);
+    Mat4 translate_mat;
+    translate(&translate_mat, x_pos, y_pos, 0);
+
+    mul(&lato->transform[lato->index], &translate_mat);
+    lato->letter_map[lato->index] = character.texture_id;
+    // TODO: Set colors
+
+    move += character.advance[0] * scale_a;
+    lato->index++;
+
+    if (lato->index == LENGTH) {
+      lato_text_render_call(lato, lato_context);
+    }
+
+    index++;
+  }
+}
+
+void lato_text_render_call(Lato *lato, LatoContext *lato_context) {
+  // TODO: Finish the render call
+  lato->index = 0;
 }

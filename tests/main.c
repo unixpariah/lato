@@ -1,4 +1,5 @@
 #include "../include/Lato.h"
+#include <GLFW/glfw3.h>
 #include <assert.h>
 #include <string.h>
 
@@ -55,6 +56,10 @@ void test_lato_init() {
 }
 
 int main() {
+  glfwInit();
+  GLFWwindow *window = glfwCreateWindow(800, 600, "GLFW Window", NULL, NULL);
+  glfwMakeContextCurrent(window);
+
   test_lato_init();
 
   assert(test_font_path("Arial"));

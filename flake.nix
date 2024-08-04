@@ -25,6 +25,7 @@
             libGL
             fontconfig
             valgrind
+            glfw
           ];
         };
       }

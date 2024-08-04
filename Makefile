@@ -29,12 +29,15 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -c $< -o $@
 
 test: lib$(LIB_NAME).a
-	@$(CC) $(CFLAGS) tests/main.c -L. -l:lib$(LIB_NAME).a -o test $(LDFLAGS)
+	@$(CC) $(CFLAGS) tests/main.c -L. -l:lib$(LIB_NAME).a -o test $(LDFLAGS) -lglfw
 	@./test
 
 test_so: lib$(LIB_NAME).so
-	@$(CC) $(CFLAGS) tests/main.c -L. -l:lib$(LIB_NAME).so -o test $(LDFLAGS)
+	@$(CC) $(CFLAGS) tests/main.c -L. -l:lib$(LIB_NAME).so -o test $(LDFLAGS) -lglfw
 	@LD_LIBRARY_PATH=$(shell pwd) ./test
+
+valgrind: test
+	@valgrind --leak-check=full ./test
 
 clean:
 	@rm -f lib$(LIB_NAME).a lib$(LIB_NAME).so

@@ -7,6 +7,7 @@
 #include "Context.h"
 #include "Error.h"
 #include "GL/glext.h"
+#include "Shaders.h"
 #include "math.h"
 #include <GL/gl.h>
 #include <fontconfig/fontconfig.h>
@@ -23,11 +24,17 @@ typedef struct {
   Mat4 transform[LENGTH];
   int index;
   Character *char_info;
+  GLuint shaders[3];
 } Lato;
 
 LatoErrorCode lato_init(Lato *lato, LatoContext *lato_context);
 
 void lato_destroy(Lato *lato, LatoContext *lato_context);
+
+void lato_text_place(Lato *lato, LatoContext *lato_context, char *text, float x,
+                     float y);
+
+void lato_text_render_call(Lato *lato, LatoContext *lato_context);
 
 LatoErrorCode get_font_path(char **buffer, const char *font_name);
 
