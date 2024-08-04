@@ -18,14 +18,46 @@
 #include <ft2build.h>
 #include <string.h>
 
+typedef enum {
+  COLOR_SOLID,
+  COLOR_GRADIENT,
+  COLOR_TRIPLE_GRADIENT,
+} ColorType;
+
 typedef struct {
-  GLuint texture_array;
+  ColorType type;
+  float color1[4];
+  float color2[4];
+  float color3[4];
+  float degrees;
+} Color;
+
+typedef struct {
   float letter_map[LENGTH];
   Mat4 transform[LENGTH];
+  float color1[LENGTH][4];
+  float color2[LENGTH][4];
+  float color3[LENGTH][4];
+  float degrees[LENGTH];
+} InstanceData;
+
+typedef struct {
+  InstanceData instance_data;
+  GLuint texture_array;
   int index;
   Character *char_info;
   GLuint shaders[3];
+  Color color;
 } Lato;
+
+void lato_set_solid_color(Lato *lato, float color[4]);
+
+void lato_set_gradient_color(Lato *lato, float start_color[4],
+                             float end_color[4], float deg);
+
+void lato_set_triple_gradient_color(Lato *lato, float start_color[4],
+                                    float mid_color[4], float end_color[4],
+                                    float deg);
 
 LatoErrorCode lato_init(Lato *lato, LatoContext *lato_context);
 

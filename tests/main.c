@@ -32,6 +32,10 @@ void test_lato_init() {
 
   Lato lato;
   lato_init(&lato, &context);
+
+  float color[4] = {0, 0, 0, 0};
+  lato_set_solid_color(&lato, color);
+
   assert(lato.char_info['h'].size[0] == 108);
   assert(lato.char_info['h'].size[1] == 188);
   assert(lato.char_info['e'].size[0] == 117);

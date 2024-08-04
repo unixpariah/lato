@@ -8,6 +8,9 @@
 LatoErrorCode lato_init(Lato *lato, LatoContext *lato_context) {
   glEnable(GL_BLEND);
 
+  float color[4] = {0, 0, 0, 0};
+  lato_set_solid_color(lato, color);
+
   // TODO: Implement all the shaders
   lato->shaders[0] = create_shader_program(solid_vert, solid_frag);
   lato->shaders[1] = create_shader_program(gradient_vert, gradient_frag);
@@ -111,8 +114,8 @@ LatoErrorCode lato_init(Lato *lato, LatoContext *lato_context) {
   lato->index = 0;
 
   for (int i = 0; i < LENGTH; i++) {
-    lato->letter_map[i] = 0;
-    mat4(&lato->transform[i]);
+    lato->instance_data.letter_map[i] = 0;
+    mat4(&lato->instance_data.transform[i]);
   }
 
   free(font_path);
@@ -200,14 +203,59 @@ void lato_text_place(Lato *lato, LatoContext *lato_context, char *text, float x,
     float x_pos = x + character.bearing[0] * scale_a + move;
     float y_pos = y - character.bearing[1] * scale_a;
 
-    scale(&lato->transform[lato->index], lato_context->font.size,
+    scale(&lato->instance_data.transform[lato->index], lato_context->font.size,
           lato_context->font.size, 0);
     Mat4 translate_mat;
     translate(&translate_mat, x_pos, y_pos, 0);
 
-    mul(&lato->transform[lato->index], &translate_mat);
-    lato->letter_map[lato->index] = character.texture_id;
-    // TODO: Set colors
+    mul(&lato->instance_data.transform[lato->index], &translate_mat);
+    lato->instance_data.letter_map[lato->index] = character.texture_id;
+
+    GLuint active_program;
+    glGetIntegerv(GL_CURRENT_PROGRAM, (GLint *)&active_program);
+
+    switch (lato->color.type) {
+    case COLOR_SOLID: {
+      if (active_program != lato->shaders[0]) {
+        glUseProgram(lato->shaders[0]);
+      }
+
+      for (int i = 0; i < 4; i++) {
+        lato->instance_data.color1[index][i] = lato->color.color1[i];
+      }
+
+      break;
+    }
+    case COLOR_GRADIENT: {
+      if (active_program != lato->shaders[1]) {
+        glUseProgram(lato->shaders[1]);
+      }
+
+      for (int i = 0; i < 4; i++) {
+        lato->instance_data.color1[index][i] = lato->color.color1[i];
+        lato->instance_data.color2[index][i] = lato->color.color2[i];
+      }
+
+      lato->instance_data.degrees[index] = lato->color.degrees;
+
+      break;
+    }
+    case COLOR_TRIPLE_GRADIENT: {
+      if (active_program != lato->shaders[2]) {
+        glUseProgram(lato->shaders[2]);
+      }
+
+      for (int i = 0; i < 4; i++) {
+        lato->instance_data.color1[index][i] = lato->color.color1[i];
+        lato->instance_data.color2[index][i] = lato->color.color2[i];
+        lato->instance_data.color3[index][i] = lato->color.color3[i];
+      }
+
+      lato->instance_data.degrees[index] = lato->color.degrees;
+
+      break;
+    }
+    }
 
     move += character.advance[0] * scale_a;
     lato->index++;
@@ -221,8 +269,115 @@ void lato_text_place(Lato *lato, LatoContext *lato_context, char *text, float x,
 }
 
 void lato_text_render_call(Lato *lato, LatoContext *lato_context) {
-  // TODO: Finish the render call
+  GLuint current_program = 0;
+
+  switch (lato->color.type) {
+  case COLOR_SOLID: {
+    current_program = lato->shaders[0];
+    glUniform4fv(glGetUniformLocation(lato->shaders[0], "color"), lato->index,
+                 &lato->instance_data.color1[0][0]);
+    break;
+  }
+  case COLOR_GRADIENT: {
+    current_program = lato->shaders[1];
+    glUniform4fv(glGetUniformLocation(lato->shaders[0], "startColor"),
+                 lato->index, &lato->instance_data.color1[0][0]);
+    glUniform4fv(glGetUniformLocation(lato->shaders[0], "endColor"),
+                 lato->index, &lato->instance_data.color2[0][0]);
+    glUniform1fv(glGetUniformLocation(lato->shaders[0], "degrees"), lato->index,
+                 &lato->instance_data.degrees[0]);
+    break;
+  }
+  case COLOR_TRIPLE_GRADIENT: {
+    return; // TODO: UNIMPLEMENTED
+
+    // current_program = lato->shaders[2];
+    // glUniform4fv(glGetUniformLocation(lato->shaders[0], "startColor"),
+    //              lato->index, &lato->instance_data.color1[0][0]);
+    // glUniform4fv(glGetUniformLocation(lato->shaders[0], "midColor"),
+    //              lato->index, &lato->instance_data.color2[0][0]);
+    // glUniform4fv(glGetUniformLocation(lato->shaders[0], "endColor"),
+    //              lato->index, &lato->instance_data.color3[0][0]);
+    // glUniform1fv(glGetUniformLocation(lato->shaders[0], "degrees"),
+    // lato->index,
+    //              &lato->instance_data.degrees[0]);
+    break;
+  }
+  }
+
+  glUniformMatrix4fv(glGetUniformLocation(current_program, "transform"),
+                     lato->index, GL_FALSE,
+                     &lato->instance_data.transform[0][0][0]);
+
+  glUniformMatrix4fv(glGetUniformLocation(current_program, "letterMap"),
+                     lato->index, GL_FALSE, &lato->instance_data.letter_map[0]);
+
   lato->index = 0;
+}
+
+void lato_set_solid_color(Lato *lato, float color[4]) {
+  Color color_struct = {
+      .type = COLOR_SOLID,
+      .color1 = {color[0], color[1], color[2], color[3]},
+  };
+
+  lato->color = color_struct;
+}
+
+void lato_set_gradient_color(Lato *lato, float start_color[4],
+                             float end_color[4], float deg) {
+  Color color_struct = {
+      .type = COLOR_GRADIENT,
+      .color1 =
+          {
+              start_color[0],
+              start_color[1],
+              start_color[2],
+              start_color[3],
+          },
+      .color2 =
+          {
+              end_color[0],
+              end_color[1],
+              end_color[2],
+              end_color[3],
+          },
+      .degrees = deg,
+  };
+
+  lato->color = color_struct;
+}
+
+void lato_set_triple_gradient_color(Lato *lato, float start_color[4],
+                                    float mid_color[4], float end_color[4],
+                                    float deg) {
+  Color color_struct = {
+      .type = COLOR_TRIPLE_GRADIENT,
+      .color1 =
+          {
+              start_color[0],
+              start_color[1],
+              start_color[2],
+              start_color[3],
+          },
+      .color2 =
+          {
+              mid_color[0],
+              mid_color[1],
+              mid_color[2],
+              mid_color[3],
+          },
+      .color3 =
+          {
+              end_color[0],
+              end_color[1],
+              end_color[2],
+              end_color[3],
+          },
+      .degrees = deg,
+  };
+
+  lato->color = color_struct;
 }
 
 void lato_destroy(Lato *lato, LatoContext *lato_context) {
