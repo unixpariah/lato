@@ -1,8 +1,8 @@
 #include "../include/Character.h"
-#include <stdio.h>
+#include "GL/gl.h"
 
-LatoErrorCode character_init(Character *character, FT_Face face, int key,
-                             int index) {
+LatoErrorCode character_init(Character *character, FT_Face face,
+                             unsigned int key, GLuint index) {
   if (FT_Load_Char(face, key, FT_LOAD_DEFAULT) == 1) {
     return LATO_ERR_FT_LOAD_CHAR;
   }
@@ -29,4 +29,8 @@ LatoErrorCode character_init(Character *character, FT_Face face, int key,
   character->advance[1] = face->glyph->advance.y >> 6;
 
   return LATO_OK;
+}
+
+void character_destroy(Character *character) {
+  glDeleteTextures(1, &character->texture_id);
 }

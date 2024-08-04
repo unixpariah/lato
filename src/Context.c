@@ -1,4 +1,5 @@
 #include "../include/Context.h"
+#include <stdlib.h>
 
 void lato_context_set_font_family(LatoContext *lato_context,
                                   const char *font_family) {
@@ -13,7 +14,11 @@ void lato_context_set_font_weight(LatoContext *lato_context, float weight) {
   lato_context->font.weight = weight;
 }
 
-void lato_context_set_characters(LatoContext *lato_context, int *characters) {
+void lato_context_set_characters(LatoContext *lato_context, int characters[]) {
+  if (lato_context->char_data.type == CHAR_DATA_CHARACTERS) {
+    free(lato_context->char_data.data.characters);
+  }
+
   int length = 0;
   while (characters[length] != '\0') {
     length++;
@@ -21,6 +26,7 @@ void lato_context_set_characters(LatoContext *lato_context, int *characters) {
 
   lato_context->char_data.type = CHAR_DATA_CHARACTERS;
   lato_context->char_data.data.length = length;
+  free(lato_context->char_data.data.characters);
   lato_context->char_data.data.characters = characters;
 }
 
@@ -44,4 +50,10 @@ LatoContext lato_context_init() {
           },
   };
   return lato_context;
+}
+
+void lato_context_destroy(LatoContext *lato_context) {
+  if (lato_context->char_data.type == CHAR_DATA_CHARACTERS) {
+    free(lato_context->char_data.data.characters);
+  }
 }

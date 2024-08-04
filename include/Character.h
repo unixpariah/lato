@@ -10,13 +10,15 @@
 #include <ft2build.h>
 
 typedef struct {
-  int texture_id;
+  GLuint texture_id;
   int size[2];
   int bearing[2];
   int advance[2];
 } Character;
 
-LatoErrorCode character_init(Character *character, FT_Face face, int key,
-                             int index);
+LatoErrorCode character_init(Character *character, FT_Face face,
+                             unsigned int key, GLuint index);
+
+void character_destroy(Character *character);
 
 #endif

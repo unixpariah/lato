@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-LatoErrorCode lato_init(Lato *lato, LatoContext context) {
+LatoErrorCode lato_init(Lato *lato, LatoContext *lato_context) {
   glEnable(GL_BLEND);
 
   FT_Library ft;
@@ -11,7 +11,7 @@ LatoErrorCode lato_init(Lato *lato, LatoContext context) {
   }
 
   char *font_path;
-  LatoErrorCode res = get_font_path(&font_path, context.font.family);
+  LatoErrorCode res = get_font_path(&font_path, lato_context->font.family);
   if (res != LATO_OK)
     return res;
 
@@ -24,20 +24,19 @@ LatoErrorCode lato_init(Lato *lato, LatoContext context) {
 
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-  GLuint texture_array;
-  glGenTextures(1, &texture_array);
+  glGenTextures(1, &lato->texture_array);
   glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D_ARRAY, texture_array);
+  glBindTexture(GL_TEXTURE_2D_ARRAY, lato->texture_array);
 
-  int size = 0;
-  switch (context.char_data.type) {
+  unsigned int size = 0;
+  switch (lato_context->char_data.type) {
   case CHAR_DATA_CHARACTERS: {
-    size = context.char_data.data.length;
+    size = lato_context->char_data.data.length;
     int arr_size = 0;
 
-    for (int i = 0; i < size; i++) {
-      if (context.char_data.data.characters[i] > arr_size) {
-        arr_size = context.char_data.data.characters[i];
+    for (unsigned int i = 0; i < size; i++) {
+      if (lato_context->char_data.data.characters[i] > arr_size) {
+        arr_size = lato_context->char_data.data.characters[i];
       }
     }
 
@@ -46,7 +45,7 @@ LatoErrorCode lato_init(Lato *lato, LatoContext context) {
     break;
   }
   case CHAR_DATA_ENCODING: {
-    switch (context.char_data.data.encoding) {
+    switch (lato_context->char_data.data.encoding) {
     case LATO_ENCODING_ASCII: {
       size = 128;
       lato->char_info = (Character *)malloc(128 * sizeof(Character));
@@ -59,15 +58,15 @@ LatoErrorCode lato_init(Lato *lato, LatoContext context) {
   glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_R8, 256, 256, size, 0, GL_RED,
                GL_UNSIGNED_BYTE, NULL);
 
-  for (int i = 0; i < size; i++) {
+  for (unsigned int i = 0; i < size; i++) {
     Character character;
 
     LatoErrorCode res;
     int key;
-    if (context.char_data.type == CHAR_DATA_CHARACTERS) {
-      key = context.char_data.data.characters[i];
+    if (lato_context->char_data.type == CHAR_DATA_CHARACTERS) {
+      key = lato_context->char_data.data.characters[i];
       res = character_init(&character, face,
-                           context.char_data.data.characters[i], i);
+                           lato_context->char_data.data.characters[i], i);
     } else {
       key = i;
       res = character_init(&character, face, i, i);
@@ -88,8 +87,6 @@ LatoErrorCode lato_init(Lato *lato, LatoContext context) {
     lato->letter_map[i] = 0;
     mat4(&lato->transform[i]);
   }
-
-  lato->context = context;
 
   return LATO_OK;
 }
@@ -154,4 +151,19 @@ LatoErrorCode get_font_path(char **buffer, const char *font_name) {
   FcFini();
 
   return LATO_OK;
+}
+
+void lato_destroy(Lato *lato, LatoContext *lato_context) {
+  glDeleteTextures(1, &lato->texture_array);
+  if (lato_context->char_data.type == CHAR_DATA_CHARACTERS) {
+    for (int i = 0; i < lato_context->char_data.data.length; i++) {
+      character_destroy(
+          &lato->char_info[lato_context->char_data.data.characters[i]]);
+    }
+  } else {
+    for (int i = 0; i < lato_context->char_data.data.length; i++) {
+      character_destroy(&lato->char_info[i]);
+    }
+  }
+  free(lato->char_info);
 }

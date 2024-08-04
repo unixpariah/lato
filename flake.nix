@@ -24,6 +24,7 @@
             gcc
             libGL
             fontconfig
+            valgrind
           ];
         };
       }

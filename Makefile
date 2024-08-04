@@ -7,9 +7,11 @@ LDFLAGS = $(shell pkg-config --libs $(LIBS))
 LIB_NAME = lato
 SRC_DIR = src
 OBJ_DIR = obj
+TEST_DIR = tests
 INCLUDE_DIR = include
 SRC_FILES = $(wildcard $(SRC_DIR)/*.c)
 OBJ_FILES = $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRC_FILES))
+TEST_FILES = $(wildcard $(TEST_DIR)/*.c)
 
 .PHONY: all clean test test_so
 

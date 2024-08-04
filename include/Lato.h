@@ -18,14 +18,16 @@
 #include <string.h>
 
 typedef struct {
-  LatoContext context;
+  GLuint texture_array;
   float letter_map[LENGTH];
   Mat4 transform[LENGTH];
   int index;
   Character *char_info;
 } Lato;
 
-LatoErrorCode lato_init(Lato *lato, LatoContext context);
+LatoErrorCode lato_init(Lato *lato, LatoContext *lato_context);
+
+void lato_destroy(Lato *lato, LatoContext *lato_context);
 
 LatoErrorCode get_font_path(char **buffer, const char *font_name);
 
