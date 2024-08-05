@@ -23,7 +23,7 @@ void test_lato_init() {
   int *keycodes = (int *)malloc(sizeof(keycode_arr));
   memcpy(keycodes, keycode_arr, sizeof(keycode_arr));
 
-  LatoContext context = lato_context_init();
+  LatoContext context = lato_context_init(0, 0, 1920, 1080);
 
   lato_context_set_characters(&context, keycodes);
   lato_context_set_font_size(&context, 40);
@@ -64,6 +64,27 @@ int main() {
   glfwMakeContextCurrent(window);
 
   test_lato_init();
+
+  int keycode_arr[] = {'h', 'e', 'l', 'o', 'w', 'r', 'd', '\0'};
+  int *keycodes = (int *)malloc(sizeof(keycode_arr));
+  memcpy(keycodes, keycode_arr, sizeof(keycode_arr));
+
+  LatoContext context = lato_context_init(0, 0, 1920, 1080);
+
+  lato_context_set_characters(&context, keycodes);
+  lato_context_set_font_size(&context, 40);
+  lato_context_set_font_weight(&context, 16);
+  lato_context_set_font_family(&context, "Monospace");
+
+  Lato lato;
+  lato_init(&lato, &context);
+
+  while (!glfwWindowShouldClose(window)) {
+    lato_text_place(&lato, &context, "hello world", 10, 10);
+    lato_text_render_call(&lato, &context);
+    glfwSwapBuffers(window);
+    glfwPollEvents();
+  }
 
   glfwDestroyWindow(window);
   glfwTerminate();

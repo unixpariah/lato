@@ -11,11 +11,10 @@ LatoErrorCode lato_init(Lato *lato, LatoContext *lato_context) {
   float color[4] = {0, 0, 0, 0};
   lato_set_solid_color(lato, color);
 
-  // TODO: Implement all the shaders
   lato->shaders[0] = create_shader_program(solid_vert, solid_frag);
   lato->shaders[1] = create_shader_program(gradient_vert, gradient_frag);
-  // lato->shaders[2] =
-  //     create_shader_program(triple_gradient_vert, triple_gradient_frag);
+  lato->shaders[2] =
+      create_shader_program(triple_gradient_vert, triple_gradient_frag);
 
   FT_Library ft;
   if (FT_Init_FreeType(&ft) == 1) {
@@ -269,6 +268,7 @@ void lato_text_place(Lato *lato, LatoContext *lato_context, char *text, float x,
 }
 
 void lato_text_render_call(Lato *lato, LatoContext *lato_context) {
+  glBindBuffer(GL_UNIFORM_BUFFER, lato_context->UBO);
   GLuint current_program = 0;
 
   switch (lato->color.type) {
@@ -289,18 +289,24 @@ void lato_text_render_call(Lato *lato, LatoContext *lato_context) {
     break;
   }
   case COLOR_TRIPLE_GRADIENT: {
-    return; // TODO: UNIMPLEMENTED
+    return;
 
-    // current_program = lato->shaders[2];
-    // glUniform4fv(glGetUniformLocation(lato->shaders[0], "startColor"),
-    //              lato->index, &lato->instance_data.color1[0][0]);
-    // glUniform4fv(glGetUniformLocation(lato->shaders[0], "midColor"),
-    //              lato->index, &lato->instance_data.color2[0][0]);
-    // glUniform4fv(glGetUniformLocation(lato->shaders[0], "endColor"),
-    //              lato->index, &lato->instance_data.color3[0][0]);
-    // glUniform1fv(glGetUniformLocation(lato->shaders[0], "degrees"),
-    // lato->index,
-    //              &lato->instance_data.degrees[0]);
+    current_program = lato->shaders[2];
+
+    GLuint active_program;
+    glGetIntegerv(GL_CURRENT_PROGRAM, (GLint *)&active_program);
+    if (active_program != current_program) {
+      glUseProgram(current_program);
+    }
+
+    glUniform4fv(glGetUniformLocation(lato->shaders[0], "startColor"),
+                 lato->index, &lato->instance_data.color1[0][0]);
+    glUniform4fv(glGetUniformLocation(lato->shaders[0], "midColor"),
+                 lato->index, &lato->instance_data.color2[0][0]);
+    glUniform4fv(glGetUniformLocation(lato->shaders[0], "endColor"),
+                 lato->index, &lato->instance_data.color3[0][0]);
+    glUniform1fv(glGetUniformLocation(lato->shaders[0], "degrees"), lato->index,
+                 &lato->instance_data.degrees[0]);
     break;
   }
   }
@@ -313,6 +319,7 @@ void lato_text_render_call(Lato *lato, LatoContext *lato_context) {
                      lato->index, GL_FALSE, &lato->instance_data.letter_map[0]);
 
   lato->index = 0;
+  glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
 void lato_set_solid_color(Lato *lato, float color[4]) {

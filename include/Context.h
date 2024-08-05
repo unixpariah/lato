@@ -1,4 +1,5 @@
 #include "Character.h"
+#include "math.h"
 
 typedef enum {
   LATO_ENCODING_ASCII,
@@ -31,6 +32,7 @@ typedef struct {
 typedef struct {
   Font font;
   CharData char_data;
+  GLuint UBO;
 } LatoContext;
 
 void lato_context_set_characters(LatoContext *lato_context, int characters[]);
@@ -42,6 +44,9 @@ void lato_context_set_font_size(LatoContext *lato_context, float size);
 
 void lato_context_set_font_weight(LatoContext *lato_context, float weight);
 
-LatoContext lato_context_init();
+void lato_context_resize_surface(LatoContext *lato_context, float x, float y,
+                                 float width, float height);
+
+LatoContext lato_context_init(float x, float y, float width, float height);
 
 void lato_context_destroy(LatoContext *context);

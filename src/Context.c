@@ -1,4 +1,5 @@
 #include "../include/Context.h"
+#include "GLES3/gl3.h"
 #include <stdlib.h>
 
 void lato_context_set_font_family(LatoContext *lato_context,
@@ -34,7 +35,8 @@ void lato_context_set_encoding(LatoContext *lato_context,
   lato_context->char_data.type = CHAR_DATA_ENCODING;
 }
 
-LatoContext lato_context_init() {
+LatoContext lato_context_init(float left, float right, float top,
+                              float bottom) {
   LatoContext lato_context = {
       .font =
           {
@@ -48,7 +50,26 @@ LatoContext lato_context_init() {
               .data.encoding = LATO_ENCODING_ASCII,
           },
   };
+
+  glGenBuffers(1, &lato_context.UBO);
+
+  Mat4 projection;
+  ortographic_projection(&projection, left, right, top, bottom);
+  glBindBuffer(GL_UNIFORM_BUFFER, lato_context.UBO);
+  glBufferData(GL_UNIFORM_BUFFER, sizeof(Mat4), &projection, GL_STATIC_DRAW);
+  glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
   return lato_context;
+}
+
+void lato_context_resize_surface(LatoContext *lato_context, float left,
+                                 float right, float top, float bottom) {
+  glBindBuffer(GL_UNIFORM_BUFFER, lato_context->UBO);
+
+  Mat4 projection;
+  ortographic_projection(&projection, left, right, top, bottom);
+  glBufferData(GL_UNIFORM_BUFFER, sizeof(Mat4), &projection, GL_STATIC_DRAW);
+  glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
 void lato_context_destroy(LatoContext *lato_context) {
