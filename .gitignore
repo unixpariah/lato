@@ -1,6 +1,5 @@
 .direnv
 obj
-liblato.a
-liblato.so
+lib
 test
 result
