@@ -48,7 +48,13 @@ typedef struct {
   Character *char_info;
   GLuint shaders[3];
   Color color;
+  GLuint UBO;
+  GLint viewport[4];
 } Lato;
+
+LatoErrorCode lato_init(Lato *lato, LatoContext *lato_context);
+
+void lato_destroy(Lato *lato, LatoContext *lato_context);
 
 void lato_set_solid_color(Lato *lato, float color[4]);
 
@@ -59,14 +65,10 @@ void lato_set_triple_gradient_color(Lato *lato, float start_color[4],
                                     float mid_color[4], float end_color[4],
                                     float deg);
 
-LatoErrorCode lato_init(Lato *lato, LatoContext *lato_context);
-
-void lato_destroy(Lato *lato, LatoContext *lato_context);
-
 void lato_text_place(Lato *lato, LatoContext *lato_context, char *text, float x,
                      float y);
 
-void lato_text_render_call(Lato *lato, LatoContext *lato_context);
+void lato_text_render_call(Lato *lato);
 
 LatoErrorCode get_font_path(char **buffer, const char *font_name);
 

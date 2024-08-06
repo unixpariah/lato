@@ -117,6 +117,17 @@ LatoErrorCode lato_init(Lato *lato, LatoContext *lato_context) {
     mat4(&lato->instance_data.transform[i]);
   }
 
+  glGenBuffers(1, &lato->UBO);
+  glGetIntegerv(GL_VIEWPORT, lato->viewport);
+
+  Mat4 projection;
+  ortographic_projection(&projection, lato->viewport[0], lato->viewport[3],
+                         lato->viewport[1], lato->viewport[2]);
+
+  glBindBuffer(GL_UNIFORM_BUFFER, lato->UBO);
+  glBufferData(GL_UNIFORM_BUFFER, sizeof(projection), &projection,
+               GL_STATIC_DRAW);
+
   free(font_path);
   FT_Done_Face(face);
   FT_Done_FreeType(ft);
@@ -260,15 +271,35 @@ void lato_text_place(Lato *lato, LatoContext *lato_context, char *text, float x,
     lato->index++;
 
     if (lato->index == LENGTH) {
-      lato_text_render_call(lato, lato_context);
+      lato_text_render_call(lato);
     }
 
     index++;
   }
 }
 
-void lato_text_render_call(Lato *lato, LatoContext *lato_context) {
-  glBindBuffer(GL_UNIFORM_BUFFER, lato_context->UBO);
+void lato_text_render_call(Lato *lato) {
+  GLint new_viewport[4];
+  glGetIntegerv(GL_VIEWPORT, new_viewport);
+
+  for (int i = 0; i < 4; i++) {
+    printf("%d ", new_viewport[i]);
+    if (lato->viewport[i] != new_viewport[i]) {
+      for (int j = 0; j < 4; j++) {
+        lato->viewport[j] = new_viewport[j];
+      }
+
+      Mat4 projection;
+      ortographic_projection(&projection, lato->viewport[0], lato->viewport[3],
+                             lato->viewport[1], lato->viewport[2]);
+
+      glBindBuffer(GL_UNIFORM_BUFFER, lato->UBO);
+      glBufferData(GL_UNIFORM_BUFFER, sizeof(projection), &projection,
+                   GL_STATIC_DRAW);
+      break;
+    }
+  }
+
   GLuint current_program = 0;
 
   switch (lato->color.type) {
