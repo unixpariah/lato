@@ -4,7 +4,6 @@
 #define LENGTH 400
 
 #include "Character.h"
-#include "Context.h"
 #include "Error.h"
 #include "GL/glext.h"
 #include "Shaders.h"
@@ -42,6 +41,34 @@ typedef struct {
 } InstanceData;
 
 typedef struct {
+  const char *family;
+  float size;
+  float weight;
+} Font;
+
+typedef enum {
+  CHAR_DATA_ENCODING,
+  CHAR_DATA_CHARACTERS,
+} CharDataType;
+
+typedef enum {
+  LATO_ENCODING_ASCII,
+} LatoEncoding;
+
+typedef union {
+  struct {
+    int *characters;
+    int length;
+  };
+  LatoEncoding encoding;
+} CharData;
+
+typedef struct {
+  Font font;
+  struct {
+    CharDataType type;
+    CharData char_data;
+  } char_data;
   InstanceData instance_data;
   GLuint texture_array;
   int index;
@@ -52,9 +79,10 @@ typedef struct {
   GLint viewport[4];
 } Lato;
 
-LatoErrorCode lato_init(Lato *lato, LatoContext *lato_context);
+LatoErrorCode lato_init(Lato *lato, const char *font_family,
+                        CharDataType char_data_type, CharData char_data);
 
-void lato_destroy(Lato *lato, LatoContext *lato_context);
+void lato_destroy(Lato *lato);
 
 void lato_set_solid_color(Lato *lato, float color[4]);
 
@@ -65,8 +93,7 @@ void lato_set_triple_gradient_color(Lato *lato, float start_color[4],
                                     float mid_color[4], float end_color[4],
                                     float deg);
 
-void lato_text_place(Lato *lato, LatoContext *lato_context, char *text, float x,
-                     float y);
+void lato_text_place(Lato *lato, char *text, float x, float y);
 
 void lato_text_render_call(Lato *lato);
 

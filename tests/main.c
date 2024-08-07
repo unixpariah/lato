@@ -19,19 +19,16 @@ int test_font_path(const char *font_name) {
 }
 
 void test_lato_init() {
-  int keycode_arr[] = {'h', 'e', 'l', 'o', 'w', 'r', 'd', '\0'};
-  int *keycodes = (int *)malloc(sizeof(keycode_arr));
-  memcpy(keycodes, keycode_arr, sizeof(keycode_arr));
+  int keycodes[7] = {'h', 'e', 'l', 'o', 'w', 'r', 'd'};
 
-  LatoContext context = lato_context_init();
-
-  lato_context_set_characters(&context, keycodes);
-  lato_context_set_font_size(&context, 40);
-  lato_context_set_font_weight(&context, 16);
-  lato_context_set_font_family(&context, "Monospace");
+  CharData char_data = {
+      .length = 7,
+      .characters = keycodes,
+  };
 
   Lato lato;
-  lato_init(&lato, &context);
+  lato_init(&lato, "Monospace", CHAR_DATA_CHARACTERS, char_data);
+  return;
 
   float color[4] = {0, 0, 0, 0};
   lato_set_solid_color(&lato, color);
@@ -51,8 +48,7 @@ void test_lato_init() {
   assert(lato.char_info['d'].size[0] == 117);
   assert(lato.char_info['d'].size[1] == 191);
 
-  lato_destroy(&lato, &context);
-  lato_context_destroy(&context);
+  lato_destroy(&lato);
 }
 
 int main() {
@@ -64,27 +60,6 @@ int main() {
   glfwMakeContextCurrent(window);
 
   test_lato_init();
-
-  int keycode_arr[] = {'h', 'e', 'l', 'o', 'w', 'r', 'd', '\0'};
-  int *keycodes = (int *)malloc(sizeof(keycode_arr));
-  memcpy(keycodes, keycode_arr, sizeof(keycode_arr));
-
-  LatoContext context = lato_context_init();
-
-  lato_context_set_characters(&context, keycodes);
-  lato_context_set_font_size(&context, 40);
-  lato_context_set_font_weight(&context, 16);
-  lato_context_set_font_family(&context, "Monospace");
-
-  Lato lato;
-  lato_init(&lato, &context);
-
-  while (!glfwWindowShouldClose(window)) {
-    lato_text_place(&lato, &context, "hello world", 10, 10);
-    lato_text_render_call(&lato);
-    glfwSwapBuffers(window);
-    glfwPollEvents();
-  }
 
   glfwDestroyWindow(window);
   glfwTerminate();
