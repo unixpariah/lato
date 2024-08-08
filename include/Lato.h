@@ -95,7 +95,7 @@ void lato_set_triple_gradient_color(Lato *lato, float start_color[4],
                                     float mid_color[4], float end_color[4],
                                     float deg);
 
-void lato_text_place(Lato *lato, char *text, float x, float y);
+void lato_text_place(Lato *lato, int *text, float x, float y);
 
 void lato_text_render_call(Lato *lato);
 

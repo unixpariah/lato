@@ -194,7 +194,7 @@ LatoErrorCode get_font_path(char **buffer, const char *font_name) {
   return LATO_ERR_FC_FONT_MATCH;
 }
 
-void lato_text_place(Lato *lato, char *text, float x, float y) {
+void lato_text_place(Lato *lato, int *text, float x, float y) {
   GLuint active_texture;
   glGetIntegerv(GL_ACTIVE_TEXTURE, (GLint *)&active_texture);
 
