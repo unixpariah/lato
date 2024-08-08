@@ -1,6 +1,9 @@
 #include "../include/Lato.h"
+#include "GL/glext.h"
 #include <GLFW/glfw3.h>
 #include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 int test_font_path(const char *font_name) {
@@ -23,12 +26,13 @@ void test_lato_init() {
 
   CharData char_data = {
       .length = 7,
-      .characters = keycodes,
+      .characters = malloc(sizeof(int) * 7),
   };
+
+  char_data.characters = keycodes;
 
   Lato lato;
   lato_init(&lato, "Monospace", CHAR_DATA_CHARACTERS, char_data);
-  return;
 
   float color[4] = {0, 0, 0, 0};
   lato_set_solid_color(&lato, color);
@@ -51,6 +55,12 @@ void test_lato_init() {
   lato_destroy(&lato);
 }
 
+void glMessageCallback(unsigned int source, unsigned int err_type,
+                       unsigned int id, unsigned int severity, int length,
+                       const char *message, const void *_) {
+  printf("%d %d %d %d %d %s", source, err_type, id, severity, length, message);
+}
+
 int main() {
   assert(test_font_path("Arial"));
   assert(test_font_path("Monospace"));
@@ -58,6 +68,9 @@ int main() {
   glfwInit();
   GLFWwindow *window = glfwCreateWindow(800, 600, "GLFW Window", NULL, NULL);
   glfwMakeContextCurrent(window);
+
+  glEnable(GL_DEBUG_OUTPUT);
+  glDebugMessageCallback(glMessageCallback, 0);
 
   test_lato_init();
 

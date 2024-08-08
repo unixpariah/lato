@@ -3,6 +3,8 @@
 
 #define LENGTH 400
 
+#define GL_GLEXT_PROTOTYPES 1
+
 #include "Character.h"
 #include "Error.h"
 #include "GL/glext.h"
@@ -57,18 +59,14 @@ typedef enum {
 
 typedef union {
   struct {
-    int *characters;
     int length;
+    int *characters;
   };
   LatoEncoding encoding;
 } CharData;
 
 typedef struct {
   Font font;
-  struct {
-    CharDataType type;
-    CharData char_data;
-  } char_data;
   InstanceData instance_data;
   GLuint texture_array;
   int index;
@@ -77,6 +75,10 @@ typedef struct {
   Color color;
   GLuint UBO;
   GLint viewport[4];
+  struct {
+    CharDataType type;
+    CharData data;
+  } char_data;
 } Lato;
 
 LatoErrorCode lato_init(Lato *lato, const char *font_family,

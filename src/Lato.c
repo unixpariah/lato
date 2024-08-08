@@ -10,19 +10,26 @@ LatoErrorCode lato_init(Lato *lato, const char *font_family,
   lato->font.weight = 10;
 
   lato->char_data.type = char_data_type;
-  lato->char_data.char_data = char_data;
+  lato->char_data.data = char_data;
+
+  lato->index = 0;
+
+  for (int i = 0; i < LENGTH; i++) {
+    lato->instance_data.letter_map[i] = 0;
+    mat4(&lato->instance_data.transform[i]);
+  }
 
   int length = 0;
   switch (lato->char_data.type) {
   case CHAR_DATA_ENCODING:
-    switch (lato->char_data.char_data.encoding) {
+    switch (lato->char_data.data.encoding) {
     case LATO_ENCODING_ASCII:
       length = 128;
       break;
     }
     break;
   case CHAR_DATA_CHARACTERS:
-    length = lato->char_data.char_data.length;
+    length = lato->char_data.data.length;
     break;
   }
 
@@ -48,12 +55,12 @@ LatoErrorCode lato_init(Lato *lato, const char *font_family,
 
   FT_Face face;
   if (FT_New_Face(ft, font_path, 0, &face) == 1) {
-    free(font_path);
     return LATO_ERR_FT_FACE;
   }
 
+  free(font_path);
+
   if (FT_Set_Pixel_Sizes(face, 256, 256) == 1) {
-    free(font_path);
     return LATO_ERR_FT_PIXEL_SIZE;
   }
 
@@ -68,20 +75,19 @@ LatoErrorCode lato_init(Lato *lato, const char *font_family,
     lato->char_info = (Character *)calloc(length, sizeof(Character));
     break;
   case CHAR_DATA_CHARACTERS: {
-    int arr_size = 0;
+    int arr_size = lato->char_data.data.characters[0];
     for (int i = 0; i < length; i++) {
-      if (lato->char_data.char_data.characters[i] > arr_size) {
-        arr_size = lato->char_data.char_data.characters[i];
+      if (lato->char_data.data.characters[i] > arr_size) {
+        arr_size = lato->char_data.data.characters[i];
       }
     }
 
-    lato->char_info = (Character *)calloc(arr_size, sizeof(Character));
+    lato->char_info = (Character *)calloc(arr_size + 1, sizeof(Character));
     break;
   };
   }
 
   if (lato->char_info == NULL) {
-    free(font_path);
     glDeleteTextures(1, &lato->texture_array);
     FT_Done_Face(face);
     FT_Done_FreeType(ft);
@@ -95,29 +101,21 @@ LatoErrorCode lato_init(Lato *lato, const char *font_family,
     Character character;
 
     LatoErrorCode res;
-    switch (lato->char_data.type) {
-    case CHAR_DATA_ENCODING:
+    int key;
+
+    if (lato->char_data.type == CHAR_DATA_CHARACTERS) {
+      key = lato->char_data.data.characters[i];
+      res = character_init(&character, face, lato->char_data.data.characters[i],
+                           i);
+    } else {
+      key = i;
       res = character_init(&character, face, i, i);
-      break;
-    case CHAR_DATA_CHARACTERS:
-      res = character_init(&character, face,
-                           lato->char_data.char_data.characters[i], i);
-      break;
     }
 
-    lato->char_info[i] = character;
+    lato->char_info[key] = character;
 
-    if (res != LATO_OK) {
-      free(font_path);
+    if (res != LATO_OK)
       return res;
-    }
-  }
-
-  lato->index = 0;
-
-  for (int i = 0; i < LENGTH; i++) {
-    lato->instance_data.letter_map[i] = 0;
-    mat4(&lato->instance_data.transform[i]);
   }
 
   glGenBuffers(1, &lato->UBO);
@@ -131,7 +129,6 @@ LatoErrorCode lato_init(Lato *lato, const char *font_family,
   glBufferData(GL_UNIFORM_BUFFER, sizeof(projection), &projection,
                GL_STATIC_DRAW);
 
-  free(font_path);
   FT_Done_Face(face);
   FT_Done_FreeType(ft);
 
@@ -422,12 +419,11 @@ void lato_set_triple_gradient_color(Lato *lato, float start_color[4],
 void lato_destroy(Lato *lato) {
   glDeleteTextures(1, &lato->texture_array);
   if (lato->char_data.type == CHAR_DATA_CHARACTERS) {
-    for (int i = 0; i < lato->char_data.char_data.length; i++) {
-      character_destroy(
-          &lato->char_info[lato->char_data.char_data.characters[i]]);
+    for (int i = 0; i < lato->char_data.data.length; i++) {
+      character_destroy(&lato->char_info[lato->char_data.data.characters[i]]);
     }
   } else {
-    for (int i = 0; i < lato->char_data.char_data.length; i++) {
+    for (int i = 0; i < lato->char_data.data.length; i++) {
       character_destroy(&lato->char_info[i]);
     }
   }
